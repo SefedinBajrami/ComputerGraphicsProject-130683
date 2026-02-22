@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Simulator</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 25px;
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
+            border-left: 4px solid #ffaa00;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        /* Premium Speedometer */
+        #speedometer-container {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 280px;
+            height: 280px;
+            z-index: 1000;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+        }
+        
+        .speedometer-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #1a1a2e, #0a0a1a);
+            border-radius: 50%;
+            border: 4px solid;
+            border-image: linear-gradient(45deg, #ffaa00, #ff4444, #00ff00, #4444ff) 1;
+            box-shadow: 0 0 30px rgba(255,170,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .speed-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 80%;
+        }
+        
+        #speedValue {
+            font-size: 72px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(255,170,0,0.5);
+            font-family: 'Digital', monospace;
+        }
+        
+        #speedUnit {
+            font-size: 18px;
+            color: #888;
+            letter-spacing: 2px;
+        }
+        
+        .speed-label {
+            font-size: 14px;
+            color: #ffaa00;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        
+        #tachometer {
+            position: absolute;
+            bottom: 30px;
+            right: 320px;
+            background: rgba(10,10,20,0.9);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 2px solid #ffaa00;
+            color: white;
+            font-family: monospace;
+            font-size: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        
+        .gear-indicator {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.9);
+            color: #ffaa00;
+            padding: 20px 35px;
+            border-radius: 15px;
+            font-size: 36px;
+            font-weight: bold;
+            border: 3px solid #ffaa00;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(255,170,0,0.3);
+            backdrop-filter: blur(5px);
+            letter-spacing: 2px;
+        }
+        
+        #controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 15px;
+            line-height: 2;
+            border-left: 4px solid #ffaa00;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            min-width: 250px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 2px solid #ffaa00;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin: 3px;
+            font-weight: bold;
+            color: #ffaa00;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .control-desc {
+            margin-left: 10px;
+            color: #ccc;
+        }
+        
+        #minimap {
+            position: absolute;
+            top: 30px;
+            right: 350px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0,0,0,0.8);
+            border: 3px solid #ffaa00;
+            border-radius: 15px;
+            z-index: 1000;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+        
+        #minimap canvas {
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+        
+        #notification {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: #ffaa00;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            border: 2px solid #ffaa00;
+            z-index: 2000;
+            transition: opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        #height-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 350px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 2px solid #ffaa00;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            min-width: 180px;
+        }
+        
+        .height-bar {
+            width: 100%;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .height-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, #00ff00, #ffaa00, #ff4444);
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            #speedometer-container {
+                width: 200px;
+                height: 200px;
+                bottom: 15px;
+                right: 15px;
+            }
+            #speedValue { font-size: 48px; }
+            .gear-indicator {
+                font-size: 24px;
+                padding: 10px 20px;
+                top: 15px;
+                right: 15px;
+            }
+            #minimap { display: none; }
+            #height-indicator { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- UI Elements -->
+    <div id="info"> CAR SIMULATOR </div>
+    
+    <div id="speedometer-container">
+        <div class="speedometer-bg"></div>
+        <div class="speed-inner">
+            <div id="speedValue">0</div>
+            <div id="speedUnit">KM/H</div>
+            <div class="speed-label">SPEED</div>
+        </div>
+    </div>
+    
+    <div id="tachometer">
+        <div style="color: #ffaa00; font-size: 14px; margin-bottom: 5px;">RPM</div>
+        <div id="rpmValue" style="font-size: 28px; color: #fff;">0</div>
+        <div style="width: 100%; height: 4px; background: #333; margin-top: 5px;">
+            <div id="rpmBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00ff00, #ffaa00, #ff4444);"></div>
+        </div>
+    </div>
+    
+    <div class="gear-indicator" id="gearIndicator">⏸ P</div>
+    
+    <div id="height-indicator">
+        <div style="display: flex; justify-content: space-between;">
+            <span style="color: #ffaa00;">CAR HEIGHT</span>
+            <span id="heightValue" style="color: white;">0.15</span>
+        </div>
+        <div class="height-bar">
+            <div id="heightFill" class="height-fill" style="width: 15%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+            <span style="color: #ff4444;">▼</span>
+            <span style="color: #ffaa00;">U/J</span>
+            <span style="color: #00ff00;">▲</span>
+        </div>
+    </div>
+    
+    <div id="minimap">
+        <canvas id="minimapCanvas" width="200" height="200"></canvas>
+    </div>
+    
+    <div id="controls-hint">
+        <div style="color: #ffaa00; font-weight: bold; margin-bottom: 15px; font-size: 18px;">🎮 CONTROLS</div>
+        <div class="control-row"><span class="key">W</span><span class="control-desc">Accelerate</span></div>
+        <div class="control-row"><span class="key">S</span><span class="control-desc">Reverse / Brake</span></div>
+        <div class="control-row"><span class="key">A</span><span class="control-desc">Turn Left</span></div>
+        <div class="control-row"><span class="key">D</span><span class="control-desc">Turn Right</span></div>
+        <div class="control-row"><span class="key">U</span><span class="control-desc">Move Car UP</span></div>
+        <div class="control-row"><span class="key">J</span><span class="control-desc">Move Car DOWN</span></div>
+        <div class="control-row"><span class="key">SPACE</span><span class="control-desc">Handbrake</span></div>
+        <div class="control-row"><span class="key">R</span><span class="control-desc">Reset Car</span></div>
+        <div class="control-row"><span class="key">H</span><span class="control-desc">Honk Horn</span></div>
+        <div class="control-row"><span class="key">L</span><span class="control-desc">Lights</span></div>
+        <div class="control-row"><span class="key">M</span><span class="control-desc">Music</span></div>
+        <div class="control-row"><span class="key">V</span><span class="control-desc">Volume +</span></div>
+        <div class="control-row"><span class="key">B</span><span class="control-desc">Volume -</span></div>
+        <div style="margin-top: 15px; font-size: 12px; color: #888;">Drag mouse to look around</div>
+    </div>
+    
+    <div id="notification">🏎️ ENGINE STARTED</div>
+
+    <!-- Hidden audio element for MP4/MP3 playback -->
+    <audio id="engineAudio" loop preload="auto" style="display: none;">
+        <source src="car-engine.mp4" type="audio/mp4">
+        <source src="car-engine.mp3" type="audio/mpeg">
+        Your browser does not support audio.
+    </audio>
+    
+    <audio id="hornAudio" preload="auto" style="display: none;">
+        <source src="car-horn.mp4" type="audio/mp4">
+        <source src="car-horn.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="musicAudio" loop preload="auto" style="display: none;">
+        <source src="background-music.mp4" type="audio/mp4">
+        <source src="background-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Import Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- Initialize Scene, Camera, Renderer ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a1030);
+        scene.fog = new THREE.Fog(0x0a1030, 50, 200);
+        
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(12, 6, 18);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.body.appendChild(renderer.domElement);
+
+        // CSS2 Renderer
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+
+        // --- Camera Controls ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = true;
+        controls.maxPolarAngle = Math.PI / 2.2;
+        controls.minDistance = 5;
+        controls.maxDistance = 40;
+        controls.target.set(0, 1, 0);
+
+        // --- Audio Setup using HTML5 Audio (supports MP4) ---
+        const engineAudio = document.getElementById('engineAudio');
+        const hornAudio = document.getElementById('hornAudio');
+        const musicAudio = document.getElementById('musicAudio');
+        
+        // Set initial volumes
+        engineAudio.volume = 0.3;
+        hornAudio.volume = 0.5;
+        musicAudio.volume = 0.1;
+        
+        let audioVolume = 0.3;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        const moonLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+        moonLight.position.set(-20, 30, -20);
+        moonLight.castShadow = true;
+        moonLight.receiveShadow = true;
+        moonLight.shadow.mapSize.width = 2048;
+        moonLight.shadow.mapSize.height = 2048;
+        moonLight.shadow.camera.left = -40;
+        moonLight.shadow.camera.right = 40;
+        moonLight.shadow.camera.top = 40;
+        moonLight.shadow.camera.bottom = -40;
+        moonLight.shadow.camera.near = 1;
+        moonLight.shadow.camera.far = 80;
+        scene.add(moonLight);
+
+        // --- Stars ---
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 2000;
+        const starsPositions = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount * 3; i += 3) {
+            starsPositions[i] = (Math.random() - 0.5) * 500;
+            starsPositions[i+1] = (Math.random() - 0.5) * 500;
+            starsPositions[i+2] = (Math.random() - 0.5) * 500 - 100;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.2 });
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // --- Road ---
+        const textureLoader = new THREE.TextureLoader();
+        const roadTexture = textureLoader.load('road.jpg');
+        roadTexture.wrapS = THREE.RepeatWrapping;
+        roadTexture.wrapT = THREE.RepeatWrapping;
+        roadTexture.repeat.set(3, 40);
+
+        const roadWidth = 16;
+        const roadLength = 200;
+        
+        const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength);
+        const roadMaterial = new THREE.MeshStandardMaterial({ 
+            map: roadTexture,
+            side: THREE.DoubleSide,
+            roughness: 0.9,
+            metalness: 0.1,
+            emissive: new THREE.Color(0x111122)
+        });
+        const road = new THREE.Mesh(roadGeometry, roadMaterial);
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0;
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Road markings
+        function createRoadMarkings() {
+            const group = new THREE.Group();
+            const markingMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffffaa,
+                emissive: new THREE.Color(0x442200)
+            });
+            
+            for (let i = -roadLength/2 + 3; i < roadLength/2; i += 6) {
+                const dash = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.4, 0.05, 3),
+                    markingMat
+                );
+                dash.position.set(0, 0.02, i);
+                dash.receiveShadow = true;
+                dash.castShadow = true;
+                group.add(dash);
+            }
+            
+            return group;
+        }
+        scene.add(createRoadMarkings());
+
+        // Terrain with hills
+        const terrainSize = 200;
+        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 64, 64);
+        terrainGeometry.rotateX(-Math.PI / 2);
+        
+        const positionAttribute = terrainGeometry.attributes.position;
+        for (let i = 0; i < positionAttribute.count; i++) {
+            const x = positionAttribute.getX(i);
+            const z = positionAttribute.getZ(i);
+            const distanceFromRoad = Math.min(
+                Math.abs(x - roadWidth/2),
+                Math.abs(x + roadWidth/2)
+            );
+            
+            if (distanceFromRoad > 5) {
+                const y = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2 +
+                         Math.sin(x * 0.3) * 1.5;
+                positionAttribute.setY(i, y);
+            } else {
+                positionAttribute.setY(i, 0);
+            }
+        }
+        terrainGeometry.computeVertexNormals();
+        
+        const terrainMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x2a5a2a,
+            roughness: 0.9
+        });
+        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrain.position.y = -0.1;
+        terrain.receiveShadow = true;
+        terrain.castShadow = true;
+        scene.add(terrain);
+
+        // --- Car Variables ---
+        let carModel = null;
+        let carPosition = new THREE.Vector3(0, 0.15, 0);
+        let carRotation = 0;
+        let wheels = [];
+        
+        // Height control variables
+        let minHeight = 0.05;
+        let maxHeight = 0.5;
+        let currentHeight = 0.15;
+        
+        // UI Elements
+        const speedValue = document.getElementById('speedValue');
+        const gearIndicator = document.getElementById('gearIndicator');
+        const rpmValue = document.getElementById('rpmValue');
+        const rpmBar = document.getElementById('rpmBar');
+        const notification = document.getElementById('notification');
+        const heightValue = document.getElementById('heightValue');
+        const heightFill = document.getElementById('heightFill');
+        
+        // Controls state
+        const keyState = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+            space: false
+        };
+
+        // Physics variables
+        let currentSpeed = 0;
+        let currentRPM = 0;
+        const maxSpeed = 180;
+        const acceleration = 3.5;
+        const deceleration = 4.0;
+        const brakeForce = 8.0;
+        const turnSpeed = 0.025;
+        
+        // Additional features
+        let lightsOn = false;
+        let musicOn = false;
+        let honking = false;
+
+        // --- Load Car Model ---
+        const loader = new GLTFLoader();
+        
+        loader.load('carModel.glb', 
+            (gltf) => {
+                carModel = gltf.scene;
+                
+                // Find wheels
+                carModel.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                        
+                        if (node.name.toLowerCase().includes('wheel') || 
+                            node.name.toLowerCase().includes('tire')) {
+                            wheels.push(node);
+                        }
+                    }
+                });
+                
+                // Scale car
+                const box = new THREE.Box3().setFromObject(carModel);
+                const size = box.getSize(new THREE.Vector3());
+                const targetHeight = 1.8;
+                const scale = targetHeight / size.y;
+                carModel.scale.set(scale, scale, scale);
+                
+                // Position car
+                setTimeout(() => {
+                    const newBox = new THREE.Box3().setFromObject(carModel);
+                    const newCenter = newBox.getCenter(new THREE.Vector3());
+                    carModel.position.y = -newCenter.y + currentHeight;
+                    carPosition.y = carModel.position.y;
+                }, 100);
+                
+                carModel.position.copy(carPosition);
+                carModel.rotation.y = carRotation;
+                
+                scene.add(carModel);
+                
+                // Play engine sound
+                engineAudio.play().catch(e => console.log('Audio play failed:', e));
+                
+                showNotification('🏎️ CAR LOADED - ENGINE STARTED');
+            },
+            (xhr) => {
+                const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                document.getElementById('info').innerHTML = `🏁 LOADING CAR: ${percent}%`;
+            },
+            (error) => {
+                console.error('Error loading car model:', error);
+                createAdvancedFallbackCar();
+            }
+        );
+
+        // Fallback car
+        function createAdvancedFallbackCar() {
+            const carGroup = new THREE.Group();
+            
+            // Car body
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.3, metalness: 0.7 });
+            const bodyGeo = new THREE.BoxGeometry(2.4, 0.9, 5);
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.45;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            carGroup.add(body);
+            
+            // Cabin
+            const cabinMat = new THREE.MeshStandardMaterial({ color: 0x88aaff, roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.8 });
+            const cabinGeo = new THREE.BoxGeometry(2.0, 0.8, 2.5);
+            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+            cabin.position.set(0, 1.0, -0.5);
+            cabin.castShadow = true;
+            cabin.receiveShadow = true;
+            carGroup.add(cabin);
+            
+            // Wheels
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+            const wheelPositions = [
+                [-1.2, 0.3, 1.5], [1.2, 0.3, 1.5],
+                [-1.2, 0.3, -1.5], [1.2, 0.3, -1.5]
+            ];
+            
+            wheelPositions.forEach((pos) => {
+                const tireGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 24);
+                const tire = new THREE.Mesh(tireGeo, wheelMat);
+                tire.rotation.z = Math.PI / 2;
+                tire.position.set(pos[0], pos[1], pos[2]);
+                tire.castShadow = true;
+                tire.receiveShadow = true;
+                carGroup.add(tire);
+                wheels.push(tire);
+            });
+            
+            carGroup.scale.set(1.2, 1.2, 1.2);
+            carGroup.position.copy(carPosition);
+            
+            carModel = carGroup;
+            scene.add(carGroup);
+            
+            engineAudio.play().catch(e => console.log('Audio play failed:', e));
+            showNotification('🚗 USING FALLBACK CAR MODEL');
+        }
+
+        // --- Keyboard Controls (including U and J for height) ---
+        window.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyW': keyState.w = true; e.preventDefault(); break;
+                case 'KeyA': keyState.a = true; e.preventDefault(); break;
+                case 'KeyS': keyState.s = true; e.preventDefault(); break;
+                case 'KeyD': keyState.d = true; e.preventDefault(); break;
+                case 'Space': keyState.space = true; e.preventDefault(); break;
+                case 'KeyR': resetCar(); e.preventDefault(); break;
+                case 'KeyU': // Move car UP
+                    adjustCarHeight(0.05);
+                    e.preventDefault();
+                    break;
+                case 'KeyJ': // Move car DOWN
+                    adjustCarHeight(-0.05);
+                    e.preventDefault();
+                    break;
+                case 'KeyH':
+                    if (!honking) {
+                        hornAudio.currentTime = 0;
+                        hornAudio.play().catch(e => console.log('Horn play failed:', e));
+                        honking = true;
+                        setTimeout(() => honking = false, 500);
+                        showNotification('📯 HONK!');
+                    }
+                    e.preventDefault(); 
+                    break;
+                case 'KeyL':
+                    lightsOn = !lightsOn;
+                    toggleLights(lightsOn);
+                    showNotification(lightsOn ? '💡 HEADLIGHTS ON' : '💡 HEADLIGHTS OFF');
+                    e.preventDefault();
+                    break;
+                case 'KeyM':
+                    musicOn = !musicOn;
+                    if (musicOn) {
+                        musicAudio.play().catch(e => console.log('Music play failed:', e));
+                        showNotification('🎵 MUSIC ON');
+                    } else {
+                        musicAudio.pause();
+                        showNotification('🎵 MUSIC OFF');
+                    }
+                    e.preventDefault();
+                    break;
+                case 'KeyV': // Volume up
+                    audioVolume = Math.min(1, audioVolume + 0.1);
+                    engineAudio.volume = audioVolume;
+                    hornAudio.volume = audioVolume;
+                    musicAudio.volume = audioVolume * 0.3;
+                    showNotification(`🔊 VOLUME: ${Math.round(audioVolume * 100)}%`);
+                    e.preventDefault();
+                    break;
+                case 'KeyB': // Volume down
+                    audioVolume = Math.max(0, audioVolume - 0.1);
+                    engineAudio.volume = audioVolume;
+                    hornAudio.volume = audioVolume;
+                    musicAudio.volume = audioVolume * 0.3;
+                    showNotification(`🔊 VOLUME: ${Math.round(audioVolume * 100)}%`);
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': keyState.w = false; e.preventDefault(); break;
+                case 'KeyA': keyState.a = false; e.preventDefault(); break;
+                case 'KeyS': keyState.s = false; e.preventDefault(); break;
+                case 'KeyD': keyState.d = false; e.preventDefault(); break;
+                case 'Space': keyState.space = false; e.preventDefault(); break;
+            }
+        });
+
+        // Adjust car height function
+        function adjustCarHeight(change) {
+            if (!carModel) return;
+            
+            currentHeight += change;
+            currentHeight = Math.max(minHeight, Math.min(maxHeight, currentHeight));
+            
+            // Update car position
+            carModel.position.y = currentHeight;
+            carPosition.y = currentHeight;
+            
+            // Update UI
+            heightValue.textContent = currentHeight.toFixed(2);
+            heightFill.style.width = (currentHeight / maxHeight * 100) + '%';
+            
+            showNotification(`📏 HEIGHT: ${currentHeight.toFixed(2)}`);
+        }
+
+        // Toggle headlights
+        function toggleLights(on) {
+            if (!carModel) return;
+            
+            carModel.traverse((node) => {
+                if (node.isMesh && node.material) {
+                    if (node.material.color && 
+                        (node.material.color.getHex() === 0xffffaa || 
+                         node.material.color.getHex() === 0xffaa00)) {
+                        if (on) {
+                            node.material.emissive.setHex(0x442200);
+                        } else {
+                            node.material.emissive.setHex(0x000000);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Show notification
+        function showNotification(message) {
+            notification.style.opacity = '1';
+            notification.textContent = message;
+            setTimeout(() => {
+                notification.style.opacity = '0';
+            }, 2000);
+        }
+
+        // Reset car
+        function resetCar() {
+            carPosition.set(0, currentHeight, 0);
+            carRotation = 0;
+            currentSpeed = 0;
+            currentRPM = 0;
+            if (carModel) {
+                carModel.position.copy(carPosition);
+                carModel.rotation.y = carRotation;
+            }
+            showNotification('🔄 CAR RESET');
+        }
+
+        // Update gauges
+        function updateGauges() {
+            const speed = Math.abs(currentSpeed) * 1.8;
+            speedValue.textContent = Math.floor(speed);
+            
+            currentRPM = Math.min(800, Math.abs(currentSpeed) * 100);
+            rpmValue.textContent = Math.floor(currentRPM * 10);
+            rpmBar.style.width = (currentRPM / 800) * 100 + '%';
+            
+            // Update gear indicator
+            if (keyState.space) {
+                gearIndicator.textContent = '⛔ HAND';
+                gearIndicator.style.color = '#ff4444';
+            } else if (currentSpeed > 5) {
+                gearIndicator.textContent = '⚙ D';
+                gearIndicator.style.color = '#00ff00';
+            } else if (currentSpeed < -2) {
+                gearIndicator.textContent = '⚙ R';
+                gearIndicator.style.color = '#ff4444';
+            } else if (keyState.w || keyState.s) {
+                gearIndicator.textContent = '⚙ N';
+                gearIndicator.style.color = '#ffaa00';
+            } else {
+                gearIndicator.textContent = '⏸ P';
+                gearIndicator.style.color = '#ffaa00';
+            }
+            
+            // Adjust engine sound playback rate based on speed
+            if (!engineAudio.paused) {
+                engineAudio.playbackRate = 0.8 + (Math.abs(currentSpeed) / maxSpeed) * 1.2;
+            }
+        }
+
+        // Update minimap
+        function updateMinimap() {
+            const canvas = document.getElementById('minimapCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, 200, 200);
+            
+            ctx.fillStyle = '#333344';
+            ctx.fillRect(40, 0, 30, 200);
+            
+            ctx.strokeStyle = '#ffffaa';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(55, 0);
+            ctx.lineTo(55, 200);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffaa00';
+            ctx.shadowColor = '#ffaa00';
+            ctx.shadowBlur = 10;
+            const carX = 55 + (carPosition.x * 2);
+            const carY = 100 - (carPosition.z / 2);
+            ctx.beginPath();
+            ctx.arc(carX, carY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (carModel) {
+                // Physics
+                const effectiveDeceleration = keyState.space ? brakeForce : deceleration;
+                
+                if (keyState.w && !keyState.space) {
+                    currentSpeed = Math.min(currentSpeed + acceleration * 0.1, maxSpeed);
+                } else if (keyState.s && !keyState.space) {
+                    currentSpeed = Math.max(currentSpeed - acceleration * 0.15, -maxSpeed/3);
+                } else {
+                    if (currentSpeed > 0) {
+                        currentSpeed = Math.max(currentSpeed - effectiveDeceleration * 0.1, 0);
+                    } else if (currentSpeed < 0) {
+                        currentSpeed = Math.min(currentSpeed + effectiveDeceleration * 0.1, 0);
+                    }
+                }
+                
+                // Steering
+                if (Math.abs(currentSpeed) > 0.5) {
+                    const turnFactor = turnSpeed * (1 - Math.abs(currentSpeed) / maxSpeed * 0.5);
+                    if (keyState.a) carRotation += turnFactor;
+                    if (keyState.d) carRotation -= turnFactor;
+                    
+                    // Rotate wheels
+                    wheels.forEach((wheel, index) => {
+                        if (index < 2) {
+                            wheel.rotation.y = keyState.a ? 0.3 : keyState.d ? -0.3 : 0;
+                        }
+                        wheel.rotation.x += currentSpeed * 0.02;
+                    });
+                }
+                
+                // Movement
+                if (Math.abs(currentSpeed) > 0.1) {
+                    carPosition.x += Math.sin(carRotation) * currentSpeed * 0.015;
+                    carPosition.z += Math.cos(carRotation) * currentSpeed * 0.015;
+                }
+                
+                // Boundaries
+                carPosition.x = Math.max(-60, Math.min(60, carPosition.x));
+                carPosition.z = Math.max(-90, Math.min(90, carPosition.z));
+                
+                carModel.position.copy(carPosition);
+                carModel.rotation.y = carRotation;
+                
+                updateGauges();
+                updateMinimap();
+            }
+
+            stars.rotation.y += 0.0001;
+            controls.update();
+            
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        showNotification('🏁 SIMULATOR READY - USE U/J FOR HEIGHT');
+        updateGauges();
+    </script>
+</body>
+</html>
